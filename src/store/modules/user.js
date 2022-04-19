@@ -28,58 +28,53 @@ const mutations = {
 }
 
 const actions = {
-  // user login
-  login({ commit }, userInfo) {
+  /*
+    处理登录业务
+  */
+  async login({ commit }, userInfo) {
+    // 结构出用户名及密码
     const { username, password } = userInfo
-    return new Promise((resolve, reject) => {
-      login({ username: username.trim(), password: password }).then(response => {
-        const { data } = response
-        commit('SET_TOKEN', data.token)
-        setToken(data.token)
-        resolve()
-      }).catch(error => {
-        reject(error)
-      })
-    })
+    const result = await login({ username: username.trim(), password: password })
+    // 注意：当前请求使用的Mock模拟数据，20000表示成功！
+    if (result.code === 20000) {
+      commit('SET_TOKEN', result.data.token)
+      setToken(result.data.token)
+      return 'login: OK!'
+    } else return Promise.reject(new Error('login: Fail!'))
   },
 
-  // get user info
-  getInfo({ commit, state }) {
-    return new Promise((resolve, reject) => {
-      getInfo(state.token).then(response => {
-        const { data } = response
-
-        if (!data) {
-          return reject('Verification failed, please Login again.')
-        }
-
-        const { name, avatar } = data
-
-        commit('SET_NAME', name)
-        commit('SET_AVATAR', avatar)
-        resolve(data)
-      }).catch(error => {
-        reject(error)
-      })
-    })
+  /*
+    获取用户信息
+  */
+  async getInfo({ commit, state }) {
+    const result = await getInfo(state.token)
+    if (result.code === 20000) {
+      const { data } = result
+      /* eslint-disable */
+      const { avatar, introduction, name, roles } = data
+      commit('SET_NAME', name)
+      commit('SET_AVATAR', avatar)
+      return 'getInfo: OK!'
+    } else return Promise.reject(new Error('getInfo: Fail!'))
   },
 
-  // user logout
-  logout({ commit, state }) {
-    return new Promise((resolve, reject) => {
-      logout(state.token).then(() => {
-        removeToken() // must remove  token  first
-        resetRouter()
-        commit('RESET_STATE')
-        resolve()
-      }).catch(error => {
-        reject(error)
-      })
-    })
+  /*
+    退出登录业务
+  */
+  async logout({ commit, state }) {
+    const result = await logout(state.token)
+    if (result.code === 20000) {
+      // 必须优先移除token
+      removeToken()
+      resetRouter()
+      commit('RESET_STATE')
+      return 'logout: OK!'
+    } else return Promise.reject(new Error('logout: Fail!'))
   },
 
   // remove token
   resetToken({ commit }) {
+    console.log('resetToken...')
     return new Promise(resolve => {
       removeToken() // must remove  token  first
       commit('RESET_STATE')
@@ -94,4 +89,3 @@ export default {
   mutations,
   actions
 }
-
